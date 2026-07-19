@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>獨立烘焙工作室咖啡豆與利潤旗艦 ERP</title>
+    <style>
+        :root {
+            --primary: #2b2520;
+            --secondary: #655345;
+            --accent: #d9a05b;
+            --bg-light: #fdfbf7;
+            --card-bg: #ffffff;
+            --text-main: #2b2520;
+            --danger: #e63946;
+            --warning: #f1a742;
+            --success: #2a9d8f;
+            --border: #e6dfd5;
+            --client-bg: #141414;
+            --client-card: #1f1f1f;
+            --client-text: #f5f5f5;
+            --client-accent: #f3a922;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-light); color: var(--text-main); padding: 10px; transition: background 0.3s; }
+        body.client-mode-active { background-color: var(--client-bg); color: var(--client-text); }
+        .container { max-width: 600px; margin: 0 auto; }
+
+        header { text-align: center; padding: 15px 0; background: linear-gradient(135deg, #4a3728, #8c6d53); color: white; border-radius: 12px; margin-bottom: 15px; }
+        header.client-mode-active { background: linear-gradient(135deg, #000, #1a1a1a); border: 1px solid var(--client-accent); }
+
+        .main-nav { display: flex; flex-wrap: wrap; background: #e0d7cc; padding: 4px; border-radius: 8px; margin-bottom: 15px; gap: 4px; }
+        .main-nav.client-mode-active { background: #2b2b2b; }
+        .nav-btn { flex: 1 1 30%; padding: 10px 2px; background: none; border: none; font-size: 0.75rem; font-weight: bold; color: #555; cursor: pointer; border-radius: 6px; transition: all 0.2s; text-align: center;}
+        .nav-btn.active { background: #4a3728; color: white; }
+        .nav-btn.client-active { background: var(--client-accent) !important; color: #111 !important; }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .card.client-style { background: var(--client-card); border: 1px solid #2d2d2d; color: var(--client-text); }
+        .card-title { font-size: 1.05rem; color: #4a3728; border-left: 4px solid var(--accent); padding-left: 8px; margin-bottom: 12px; font-weight: bold; }
+        .card-title.client-style { color: var(--client-accent); border-left-color: var(--client-accent); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-group { margin-bottom: 8px; }
+        .form-group.full-width { grid-column: span 2; }
+        label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 4px; font-weight: 500; }
+        .card.client-style label { color: #aaa; }
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background-color: #fafafa; }
+        .card.client-style input { background-color: #141414; border-color: #3a3a3a; color: #fff; }
+
+        .btn { width: 100%; padding: 12px; background-color: var(--accent); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 5px; text-align: center;}
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; width: auto; margin-top: 10px; display: inline-block; background-color: #2a9d8f; }
+        .btn-save { background-color: #4a3728; margin-bottom: 15px; }
+        .btn-csv { background-color: #2a9d8f; margin-bottom: 15px; width: auto; font-size: 0.85rem; padding: 10px 15px; display: inline-block; }
+
+        .result-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
+        .card.client-style .result-item { border-bottom-color: #2d2d2d; }
+        .result-val { font-weight: bold; color: #4a3728; }
+        .card.client-style .result-val { color: #fff; }
+        
+        .cost-floor { color: #e63946; font-weight: normal; font-size: 0.85rem; }
+        .tier-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px; }
+        .spec-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px; }
+        .mode-btn, .tier-btn { padding: 8px 4px; font-size: 0.75rem; border: 1px solid #8c6d53; background: #fff; color: #8c6d53; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; }
+        .mode-btn.active { background: #4a3728; color: #fff; }
+        .tier-btn.active { background: var(--client-accent); color: #111; border-color: var(--client-accent); }
+
+        .ratio-toggle-group { display: flex; gap: 4px; margin-bottom: 8px; background: #f0ebf1; padding: 3px; border-radius: 6px; border: 1px dashed #b7a4b9; }
+        .ratio-mode-btn { flex: 1; padding: 6px 2px; font-size: 0.75rem; border: none; background: transparent; color: #6d5271; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center;}
+        .ratio-mode-btn.active { background: #714b79; color: white; }
+
+        .blend-item { display: grid; grid-template-columns: 2fr 1fr 1.2fr 35px; gap: 6px; align-items: center; margin-bottom: 8px; }
+        .btn-del { background: var(--danger); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 0.8rem; }
+        .blend-ratio-badge { font-size: 0.7rem; color: #714b79; display: block; margin-top: 2px; font-weight: bold; text-align: right; }
+
+        .reseller-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.9rem; text-align: center; }
+        .reseller-table th { background-color: #2b2b2b; color: var(--client-accent); padding: 10px 4px; font-weight: bold; border: 1px solid #3d3d3d; font-size: 0.85rem; }
+        .reseller-table td { padding: 12px 4px; border: 1px solid #3d3d3d; color: #fff; }
+        .reseller-table tr:nth-child(even) { background-color: #1a1a1a; }
+
+        .sub-accent-text { color: var(--accent); font-weight: bold; font-size: 0.85rem; margin-top: 5px; display: block; }
+        .highlight-box { background: #f0fff4; border: 1px dashed #38a169; padding: 10px; border-radius: 8px; margin-top: 8px; }
+        .highlight-box-title { font-size: 0.85rem; font-weight: bold; color: #276749; margin-bottom: 5px; }
+        .section-divider { border: none; border-top: 2px dashed #90cdf4; margin: 15px 0; }
+
+        .history-list { margin-top: 10px; }
+        .history-item { background: #fff; border: 1px solid #e6dfd5; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.01); position: relative; }
+        .history-item-title { font-weight: bold; font-size: 0.9rem; color: #4a3728; margin-bottom: 4px; }
+        .history-item-meta { color: #777; margin-bottom: 6px; line-height: 1.4; }
+        .history-item-actions { display: flex; gap: 8px; margin-top: 5px; }
+        .btn-history-load { background: #2a9d8f; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+        .btn-history-del { background: #e63946; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+        
+        .weigh-list { font-size: 0.85rem; color: #2b6cb0; padding-left: 5px; margin-top: 5px; }
+        .weigh-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dotted #bee3f8; }
+        .weigh-item:last-child { border: none; }
+        
+        .blend-avg-price-box { background-color: #f7fafc; border: 1px solid #cbd5e0; padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+        .blend-avg-price-val { font-weight: bold; color: #2b6cb0; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header id="mainHeader">
+        <h1 id="headerTitle">咖啡豆與利潤決策 ERP 精簡版</h1>
+        <p id="headerSub">工作室專用生豆混烘與風味買手拆賣全功能系統</p>
+    </header>
+
+    <div class="main-nav" id="mainNav">
+        <button class="nav-btn active" id="btnAdminView" onclick="switchMainView('admin')">🔒 自烘核心精算</button>
+        <button class="nav-btn" id="btnClientView" onclick="switchMainView('client')">🤝 商業折扣戰</button>
+        <button class="nav-btn" id="btnDealerView" onclick="switchMainView('dealer')">☕ 外購熟豆拆賣</button>
+    </div>
+
+    <div id="adminViewZone">
+        <div class="card">
+            <div class="card-title">⚖️ 豆款模式（生豆混烘型）</div>
+            <div class="spec-group" style="margin-bottom: 15px;">
+                <div class="mode-btn" id="modeSingle" onclick="setBeanMode('single')">單一產區單品豆</div>
+                <div class="mode-btn active" id="modeBlend" onclick="setBeanMode('blend')">招牌特調配方豆</div>
+            </div>
+
+            <div class="card-title">⚙️ 生產損耗與勞務參數</div>
+            <form id="erpForm" onsubmit="event.preventDefault();">
+                <div class="form-group full-width"><label>✨ 客製化咖啡豆/配方名稱</label><input type="text" id="beanName" value="店長私房配方豆" oninput="calculateERP()"></div>
+                <div id="singleInputGroup" class="form-grid" style="display:none;">
+                    <div class="form-group full-width"><label>單品生豆進貨價 (元/kg)</label><input type="number" id="greenPrice" value="380" oninput="calculateERP()"></div>
+                </div>
+
+                <div id="blendInputGroup" style="display:block; background: #fdfbf7; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px;">
+                    <span class="sub-accent-text" style="margin-bottom:6px;">📊 混烘生豆配比輸入模式：</span>
+                    <div class="ratio-toggle-group">
+                        <button type="button" class="ratio-mode-btn" id="ratioModePercent" onclick="setBlendInputMode('percent')">百分比模式 (%)</button>
+                        <button type="button" class="ratio-mode-btn active" id="ratioModeGram" onclick="setBlendInputMode('gram')">🧪 公克研發模式 (g)</button>
+                    </div>
+                    
+                    <div style="display: flex; font-size: 0.75rem; color:#666; margin-bottom:6px; font-weight: bold; padding: 0 4px;">
+                        <span style="flex:2;">生豆產區名稱</span>
+                        <span style="flex:1;">進價(元/kg)</span>
+                        <span style="flex:1.2; text-align:right;" id="ratioColTitle">比例(g)</span>
+                        <span style="width:35px;"></span>
+                    </div>
+
+                    <div id="blendListContainer">
+                        <div class="blend-item"><input type="text" value="巴西 喜拉朵" class="b-name"><input type="number" value="200" class="b-price" oninput="calculateERP()"><div style="text-align:right;"><input type="number" value="200" class="b-ratio" oninput="calculateERP()"><span class="blend-ratio-badge" id="badge_0">換算: --%</span></div><button type="button" class="btn-del" onclick="removeBlendItem(this)">✕</button></div>
+                        <div class="blend-item"><input type="text" value="衣索比亞 耶加雪菲" class="b-name"><input type="number" value="420" class="b-price" oninput="calculateERP()"><div style="text-align:right;"><input type="number" value="300" class="b-ratio" oninput="calculateERP()"><span class="blend-ratio-badge" id="badge_1">換算: --%</span></div><button type="button" class="btn-del" onclick="removeBlendItem(this)">✕</button></div>
+                    </div>
+                    <button type="button" class="btn btn-sm" onclick="addBlendItem()">➕ 新增生豆品相</button>
+                    <div id="blendTotalWarn" style="font-size:0.75rem; margin-top:8px; color:var(--danger); font-weight:bold; display:none;">⚠️ 提醒：目前百分比總和不等於 100%，請修正。</div>
+                    
+                    <div class="blend-avg-price-box">
+                        <span>📊 調配後生豆加權平均價格：</span>
+                        <span class="blend-avg-price-val" id="blendAvgGreenPrice">-- 元/kg</span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group"><label>綜合混烘失重率 (%)</label><input type="number" id="roastLoss" value="15" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>開倉瑕疵淘汰損耗率 (%)</label><input type="number" id="discardRate" value="4" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>水電瓦斯每公斤生豆分攤 (元/kg)</label><input type="number" id="utilityFee" value="30" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>自我時間工資生豆攤提 (元/kg)</label><input type="number" id="myLabor" value="80" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>✉️ 耳掛熟豆分裝耗損率 (%)</label><input type="number" id="dripLossRate" value="4" oninput="calculateERP()"></div>
+                    
+                    <div class="form-group" style="background:#f0fcf4; border: 1px dashed var(--success); padding:4px; border-radius:6px;"><label style="color:var(--success); font-weight:bold;">⚖️ 半/一磅溢秤 (g/袋)</label><input type="number" id="overpackGram" value="2" oninput="calculateERP()" style="font-weight:bold; color:var(--success);"></div>
+                    <div class="form-group"><label>⚡ 濾掛單包設定粉重 (g)</label><input type="number" id="adminDripGram" value="10" oninput="calculateERP()"></div>
+                    <div class="form-group" style="background:#f0fcf4; border: 1px dashed var(--success); padding:4px; border-radius:6px;"><label style="color:var(--success); font-weight:bold;">⚖️ 濾掛單包溢秤 (g/包)</label><input type="number" id="dripScaleError" value="0.5" oninput="calculateERP()" style="font-weight:bold; color:var(--success);"></div>
+                </div>
+
+                <span class="sub-accent-text">📦 包材、代工與物流緩衝成本</span>
+                <div class="form-grid">
+                    <div class="form-group"><label>半磅袋+氣閥 (元/個)</label><input type="number" id="pkgHalf" value="12" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>1磅袋+氣閥 (元/個)</label><input type="number" id="pkgOnePound" value="15" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>營業用1KG袋 (元/個)</label><input type="number" id="pkgOneKg" value="20" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>濾掛代工內外袋 (元/包)</label><input type="number" id="pkgDripSingle" value="6" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>輕量10入外盒 (元/個)</label><input type="number" id="pkgDripBox" value="15" oninput="calculateERP()"></div>
+                    <div class="form-group"><label>20入禮盒外盒+提袋 (元/組)</label><input type="number" id="pkgDripBoxLarge" value="45" oninput="calculateERP()" style="color:#d69e2e; font-weight:bold;"></div>
+                    <div class="form-group full-width"><label>📦 網購零售單件紙箱+包裝分攤 (元/出貨箱)</label><input type="number" id="pkgShippingCarton" value="10" oninput="calculateERP()"></div>
+                    
+                    <div class="form-group" style="background: #fff9e6; padding: 10px; border-radius: 6px; border: 1px solid var(--accent); margin-top:5px;">
+                        <label style="color: #4a3728; font-weight: bold;">🎯 零售精品「期望毛利率 (%)」：</label>
+                        <input type="number" id="studioCoreMargin" value="60" oninput="calculateERP()" style="font-weight:bold; text-align:center; color:#4a3728;">
+                    </div>
+                    <div class="form-group" style="background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px solid #3182ce; margin-top:5px;">
+                        <label style="color: #2b6cb0; font-weight: bold;">🎯 營業用 1KG「期望毛利率 (%)」：</label>
+                        <input type="number" id="studioB2BMargin" value="40" oninput="calculateERP()" style="font-weight:bold; text-align:center; color:#2b6cb0;">
+                    </div>
+                    <div class="form-group full-width" style="background: #fff5f5; padding: 10px; border-radius: 6px; border: 1px solid #fc8181; margin-top:5px;">
+                        <label style="color: #c53030; font-weight: bold;">🎯 零售濾掛盒裝「期望毛利率 (%)」：</label>
+                        <input type="number" id="studioDripMargin" value="55" oninput="calculateERP()" style="font-weight:bold; text-align:center; color:#c53030;">
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <button class="btn btn-save" onclick="saveCurrentToHistory()">💾 儲存此批次決策至歷史紀錄</button>
+
+        <div class="card" style="background:#fffcf7; border: 1px solid #e5a93c;">
+            <div class="card-title" style="border-left-color: #e5a93c;">💰 自烘豆生產底線與建議零售價 <span style="font-size:0.75rem; color:var(--success);">(已計入溢秤值)</span></div>
+            <div class="result-item"><span>每克 (g) 熟豆淨硬成本</span><span class="result-val" id="costPerGram">-- 元</span></div>
+            <div class="result-item"><span>精品半磅 (含溢秤+紙箱) <span class="cost-floor">(🔒底線: <span id="floorHalf">--</span>元)</span></span><span class="result-val" id="suggestedRetailHalf">-- 元</span></div>
+            <div class="result-item"><span>經典一磅 (含溢秤+紙箱) <span class="cost-floor">(🔒底線: <span id="floorOne">--</span>元)</span></span><span class="result-val" id="suggestedRetailOnePound">-- 元</span></div>
+            <div class="result-item"><span>營業用 1KG 裝 (含溢秤) <span class="cost-floor">(🔒底線: <span id="floorKg">--</span>元)</span></span><span class="result-val" id="suggestedRetailOneKg">-- 元</span></div>
+            <div class="result-item"><span>耳掛濾掛 (單包) <span class="cost-floor">(🔒底線: <span id="floorDripS">--</span>元)</span></span><span class="result-val" id="suggestedRetailDripSingle">-- 元</span></div>
+            <div class="result-item"><span>經典濾掛禮盒 (10入+紙箱) <span class="cost-floor">(🔒底線: <span id="floorDripB">--</span>元)</span></span><span class="result-val" id="suggestedRetailDripBox">-- 元</span></div>
+            <div class="result-item" style="background: #fffaf0; border:none;"><span>20入禮盒 (+紙箱) <span class="cost-floor" style="color:#dd6b20;">(🔒底線: <span id="floorDripBLarge">--</span>元)</span></span><span class="result-val" id="suggestedRetailDripBoxLarge" style="color:#dd6b20;">-- 元</span></div>
+        </div>
+
+        <div class="card" style="background:#f0f7ff; border: 2px solid #3182ce;">
+            <div class="card-title" style="color:#2b6cb0; border-left-color: #3182ce;">🚀 B2B 大宗烘焙與耳掛包裝現場工時分流精算</div>
+            
+            <div class="highlight-box" style="background:#e6f6ff; border: 1px solid #63b3ed; margin-bottom: 15px;">
+                <div class="highlight-box-title" style="color:#2b6cb0; font-weight: bold;">📊 核心決策目標：依下方 B2B 預估量之大宗熟豆預估淨利 <span style="font-size:0.75rem; color:#4a5568; font-weight:normal;">(已改計單筆大宗運費)</span></div>
+                <div class="result-item" style="border-bottom:1px dashed #bee3f8; padding: 6px 0;"><span>方案 A [零售原價不打折]</span><span id="bulkQuoteA">--</span></div>
+                <div class="result-item" style="border-bottom:1px dashed #bee3f8; padding: 6px 0;"><span>方案 B [大宗送禮特惠]</span><span id="bulkQuoteB">--</span></div>
+                <div class="result-item" style="border:none; padding: 6px 0;"><span>方案 C [專屬合作批發]</span><span id="bulkQuoteC" style="color:var(--success); font-weight:bold;">--</span></div>
+            </div>
+
+            <div style="background:#fff; padding:12px; border-radius:6px; border:1px solid #90cdf4; margin-bottom:10px;">
+                <p style="font-size:0.9rem; font-weight:bold; color:#2b6cb0; margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">🔥 第一階段：熟豆烘焙排程</p>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-weight:bold; color:#2b6cb0;">📦 請選擇客戶這次訂購的「出貨包裝規格」：</label>
+                    <div class="tier-group" style="grid-template-columns: 1fr 1fr; margin-top:4px;">
+                        <div class="tier-btn active" id="bulkPackModeHalf" onclick="setBulkPackMode('half')">🛍️ 精品半磅裝 (227g)</div>
+                        <div class="tier-btn" id="bulkPackModeKg" onclick="setBulkPackMode('kg')">🪵 營業用 1KG 裝 (1000g)</div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label style="font-weight:bold; color:#2b6cb0;" id="labelBulkCount">📊 預計訂購的熟豆「總包數」</label>
+                        <input type="number" id="bulkHalfOrderCount" value="100" oninput="calculateERP()" style="font-weight:bold; color:#2b6cb0; text-align:center;">
+                    </div>
+                    <div class="form-group">
+                        <label>🛠️ 烘豆機規格 (kg)</label>
+                        <input type="number" id="customMachineSize" value="6" oninput="calculateERP()" style="text-align:center;">
+                    </div>
+                    <div class="form-group">
+                        <label>🔥 單鍋預計下豆量 (g)</label>
+                        <input type="number" id="customBatchWeightG" value="5000" oninput="calculateERP()" style="text-align:center; color:var(--success); font-weight:bold;">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>⏱️ 單鍋時間 (含進退料冷卻，分/鍋)</label>
+                        <input type="number" id="customBatchMinutes" value="18" oninput="calculateERP()" style="text-align:center;">
+                    </div>
+                    <div class="form-group full-width">
+                        <label style="color:#b7791f;">🏮 大烘豆機單次開機預熱瓦斯費 (元/次)</label>
+                        <input type="number" id="customWarmUpGasCost" value="150" oninput="calculateERP()" style="color:#b7791f; font-weight:bold;">
+                    </div>
+                    <div class="form-group full-width">
+                        <label style="color:#2b6cb0; font-weight:bold;">🚚 大宗單筆物流費 / 親送油資成本 (元/單)</label>
+                        <input type="number" id="bulkShippingFee" value="70" oninput="calculateERP()" style="color:#2b6cb0; font-weight:bold; text-align:center;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="background:#f7fafc; border-color:#cbd5e0; margin-bottom:15px;">
+                <div class="highlight-box-title" style="color:#4a5568;">⚖️ 烘焙物料與純烘豆工時結果 <span style="font-size:0.75rem; color:var(--success);">(生豆量已自動計入溢秤值)</span></div>
+                <div class="result-item"><span>此單所需熟豆淨重</span><span class="result-val" id="bulkRequiredRoastedKg" style="color:#2b6cb0;">-- kg</span></div>
+                <div class="result-item"><span>應準備生豆總重量（含瑕疵、失重與溢秤）</span><span class="result-val" id="bulkRequiredGreenKg" style="color:var(--danger); font-size:1.05rem;">-- kg</span></div>
+                
+                <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #bee3f8;" id="weighListZone">
+                    <p style="font-size:0.8rem; font-weight:bold; color:#2c5282;">⚖️ 該批次生豆備料配比秤重清單（公克 g）：</p>
+                    <div class="weigh-list" id="weighListContainer"></div>
+                </div>
+
+                <div class="result-item" style="margin-top:8px; border-top:1px solid #e2e8f0;"><span>預估應烘焙總鍋數</span><span class="result-val" id="bulkCustomPots" style="color:#dd6b20; font-weight:bold;">-- 鍋</span></div>
+                <div class="result-item" style="border:none;"><span>⏰ 烘豆機純運轉工時</span><span class="result-val" id="bulkCustomHoursStr" style="color:var(--success); font-weight:bold;">--</span></div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div style="background:#fff; padding:12px; border-radius:6px; border:1px solid #b83280; margin-bottom:10px;">
+                <p style="font-size:0.9rem; font-weight:bold; color:#b83280; margin-bottom:8px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">📦 第二階段：獨立耳掛包裝排程（依客戶客製包數）</p>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label style="font-weight:bold; color:#b83280;">✉️ 本次訂單「實際需要製作的耳掛總包數」</label>
+                        <input type="number" id="bulkDripOrderCount" value="200" oninput="calculateERP()" style="font-weight:bold; color:#b83280; text-align:center;">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>⏳ 單包手動磨粉封口速度 (秒/包)</label>
+                        <input type="number" id="packSecondsPerBag" value="45" oninput="calculateERP()" style="text-align:center;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="background:#fff5f7; border-color:#fed7e2; margin-bottom:15px;">
+                <div class="highlight-box-title" style="color:#b83280;">✉️ 耳掛包裝工時與耗材試算</div>
+                <div class="result-item" style="border:none;"><span>📦 後端手酸封口包裝工時</span><span class="result-val" id="bulkPackHoursStr" style="color:#4c51bf; font-weight:bold;">--</span></div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="highlight-box" style="background:#fffaf0; border-color:#dd6b20; margin-bottom:0;">
+                <div class="highlight-box-title" style="color:#dd6b20;">🏁 今日總作業時程診斷</div>
+                <div class="result-item" style="background:#ffebcc; padding:6px; border-radius:4px; border:none;">
+                    <span style="font-weight:bold; color:#7b341e;">⌛ 現場總作業工時 (烘焙 + 包裝)</span>
+                    <span class="result-val" id="bulkTotalJobTimeStr" style="color:#7b341e; font-size:1.1rem;">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="clientViewZone" style="display: none;">
+        <div class="card client-style">
+            <div class="card-title client-style">🤝 自烘豆：大宗批發與管道折扣戰</div>
+            <div class="form-group">
+                <label>選擇目前對外的「給貨商業模式」：</label>
+                <div class="tier-group">
+                    <div class="tier-btn active" id="tierFriend" onclick="setCommercialDiscount('Friend', 20)">❤️ 專屬親友價</div>
+                    <div class="tier-btn" id="tierWholesale" onclick="setCommercialDiscount('Wholesale', 40)">🏢 大宗批發價</div>
+                </div>
+                <input type="hidden" id="commercialDiscountPercent" value="20">
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+                <label>📦 管道本地雜支/分攤包裝物流費 (元/單)</label>
+                <input type="number" id="resellerLocalCost" value="15" oninput="calculateERP()" style="background-color: #141414; border-color: #3a3a3a; color: #fff;">
+            </div>
+        </div>
+
+        <div class="card client-style" style="border: 2px solid var(--client-accent);">
+            <div class="card-title client-style">📊 批發與打折動態定價結算表 <span style="font-size: 0.75rem; color: #e63946; font-weight: normal;">(🔒 已啟動底線保護防虧鎖)</span></div>
+            <table class="reseller-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">品項規格</th>
+                        <th style="width: 30%;">標準市售價</th>
+                        <th style="width: 30%;">最終結算價</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="text-align:left; padding-left:10px;">精品半磅豆</td><td id="tdStdHalf" style="text-decoration:line-through; color:#888;">-- 元</td><td id="tdSupplyHalf" style="color:var(--client-accent); font-weight:bold;">-- 元</td></tr>
+                    <tr><td style="text-align:left; padding-left:10px;">經典一磅豆</td><td id="tdStdOne" style="text-decoration:line-through; color:#888;">-- 元</td><td id="tdSupplyOne" style="color:var(--client-accent); font-weight:bold;">-- 元</td></tr>
+                    <tr><td style="text-align:left; padding-left:10px;">營業用 1KG 裝</td><td id="tdStdOneKg" style="text-decoration:line-through; color:#888;">-- 元</td><td id="tdSupplyOneKg" style="color:var(--client-accent); font-weight:bold;">-- 元</td></tr>
+                    <tr><td style="text-align:left; padding-left:10px;">耳掛濾掛 (單包)</td><td id="tdStdDripSingle" style="text-decoration:line-through; color:#888;">-- 元</td><td id="tdSupplyDripSingle" style="color:var(--client-accent); font-weight:bold;">-- 元</td></tr>
+                    <tr><td style="text-align:left; padding-left:10px;">經典濾掛禮盒 (10入)</td><td id="tdStdDrip" style="text-decoration:line-through; color:#888;">-- 元</td><td id="tdSupplyDrip" style="color:var(--client-accent); font-weight:bold;">-- 元</td></tr>
+                    <tr><td style="text-align:left; padding-left:10px; color:#f3a922;">20入禮盒</td><td id="tdStdDripLarge" style="text-decoration:line-through; color:#888;">-- 元</td><td id="tdSupplyDripLarge" style="color:var(--client-accent); font-weight:bold;">-- 元</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="dealerViewZone" style="display: none;">
+        <div class="card" style="background: #f4f7fa; border: 1px solid #3182ce;">
+            <div class="card-title" style="color:#2b6cb0; border-left-color:#3182ce;">☕ 風味買手：外購熟豆參數輸入</div>
+            <div class="form-grid">
+                <div class="form-group full-width"><label>🔍 外部烘焙名店/豆款名稱</label><input type="text" id="dealerBeanName" value="名店聯名冠軍熟豆" oninput="calculateERP()"></div>
+                <div class="form-group" style="background: #e6fffa; padding: 10px; border-radius: 6px; border: 1px solid #319795; grid-column: span 2;">
+                    <label style="font-weight:bold; color:#234e52;">⚖️ 購入熟豆總克數 (g)</label>
+                    <input type="number" id="dealerTotalWeightG" value="1000" oninput="calculateERP()" style="font-weight:bold; color:#234e52; border-color:#319795;">
+                </div>
+                <div class="form-group full-width" style="background: #e6fffa; padding: 10px; border-radius: 6px; border: 1px solid #319795;">
+                    <label style="font-weight:bold; color:#234e52;">🏬 上述整包熟豆的進貨總成本價 (元)</label>
+                    <input type="number" id="dealerInputTotalCost" value="600" oninput="calculateERP()" style="font-weight:bold;">
+                </div>
+                <div class="form-group"><label>⚡ 耳掛單包粉重 (g)</label><input type="number" id="dealerDripGram" value="10" oninput="calculateERP()"></div>
+                <div class="form-group"><label>📦 內外袋包材費 (元/包)</label><input type="number" id="dealerDripPkg" value="4" oninput="calculateERP()"></div>
+                <div class="form-group"><label>⏳ 磨粉封口手工 (元/包)</label><input type="number" id="dealerDripLabor" value="4" oninput="calculateERP()"></div>
+                <div class="form-group"><label>🎯 核心期望毛利率 (%)</label><input type="number" id="dealerDripTargetMargin" value="60" oninput="calculateERP()"></div>
+            </div>
+        </div>
+
+        <div class="card" style="border: 2px solid #9f7aea; background: #faf5ff;">
+            <div class="card-title" style="color:#6b46c1; border-left-color: #9f7aea;" id="titlePlanOne">📦 出貨方案一：熟豆全做成耳掛散賣（即時連動）</div>
+            <div class="result-item"><span>這包熟豆可生產總耳掛數</span><span class="result-val" id="dripTotalBags" style="color:#6b46c1;">-- 包</span></div>
+            <div class="result-item"><span>🔒 單包耳掛死成本 (底線)</span><span class="result-val" id="dripCostPerBag" style="color:var(--danger);">-- 元</span></div>
+            <div class="result-item" style="background:#f3e8ff; padding: 6px 4px; border-radius:6px;">
+                <span style="font-weight:bold; color:#6b46c1;">🎯 建議零售價 / 包</span>
+                <span class="result-val" id="dripSuggestPrice" style="font-size:1.1rem; color:#6b46c1;">-- 元</span>
+            </div>
+        </div>
+
+        <div class="card" style="border: 1px solid #3182ce;">
+            <div class="card-title" style="color:#2b6cb0; border-left-color: #3182ce;">⚖️ 出貨方案二：大包裝拆半磅賣 + 殘豆做耳掛</div>
+            <div class="form-grid" style="margin-bottom: 10px;">
+                <div class="form-group"><label>承諾大氣加碼克數 (g/袋)</label><input type="number" id="dealerPlusG" value="3" oninput="calculateERP()"></div>
+                <div class="form-group"><label>拆袋包材費 (貼紙+袋)</label><input type="number" id="dealerPkgFee" value="15" oninput="calculateERP()"></div>
+                <div class="form-group"><label>封口秤重工資 (元/袋)</label><input type="number" id="dealerLaborFee" value="10" oninput="calculateERP()"></div>
+                <div class="form-group"><label>半磅預計售價 (元/袋)</label><input type="number" id="dealerSellPrice" value="350" oninput="calculateERP()"></div>
+            </div>
+            <hr style="border:none; border-top:1px dashed #cbd5e0; margin:10px 0;">
+            <div class="result-item"><span>主力商品拆分數量</span><span class="result-val" id="dealerCanPackBags" style="color:var(--success); font-weight:bold;">-- 袋</span></div>
+            <div class="result-item"><span>🔒 拆賣單袋死成本</span><span class="result-val" id="dealerCostPerBag" style="color:var(--danger);">-- 元</span></div>
+            <div class="result-item"><span>📈 每袋拆賣實賺淨利</span><span class="result-val" id="dealerProfitPerBag" style="color:var(--success);">-- 元</span></div>
+            <div class="result-item" style="background:#edf2f7; padding:4px 0;"><span id="labelTotalPackProfit">💵 全部拆袋全賣總利潤</span><span class="result-val" id="dealerTotal4Profit" style="font-size:1.1rem; color:#2b6cb0;">-- 元</span></div>
+            
+            <div style="background:#fff5f5; padding:10px; border-radius:8px; margin-top:10px; border:1px dashed var(--danger);">
+                <p style="font-size:0.85rem; font-weight:bold; color:var(--danger); margin-bottom:4px;">🎁 剩餘殘豆打包再創利：</p>
+                <div class="result-item" style="border:none; padding:2px 0;"><span style="font-size:0.8rem;">主力包完後剩餘殘豆：</span><span class="result-val" id="dealerLeftoverG" style="color:var(--danger);">-- g</span></div>
+                <div class="result-item" style="border:none; padding:2px 0;"><span style="font-size:0.8rem;">⚡ 殘豆可包耳掛數：</span><span class="result-val" id="dealerLeftoverDrips" style="color:#b83280;">-- 包</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 25px; border-top: 3px solid #4a3728; background: #faf6f0;">
+        <div class="card-title" style="border-left-color: #4a3728;">💾 決策歷史紀錄與導出區</div>
+        <button class="btn btn-csv" onclick="exportHistoryToCSV()">📊 匯出完整財務報表 (.csv)</button>
+        <div class="history-list" id="historyListContainer"></div>
+    </div>
+
+</div>
+
+<script>
+    let currentBeanMode = 'blend'; 
+    let blendInputMode = 'gram'; 
+    let erpHistoryData = [];
+    let bulkPackMode = 'half'; 
+
+    function escapeHtml(unsafe) {
+        return (unsafe || '').toString()
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    window.onload = function() { 
+        loadHistoryFromStorage();
+        calculateERP(); 
+    };
+
+    function switchMainView(view) {
+        const isClient = (view === 'client');
+        document.getElementById('btnAdminView').classList.toggle('active', view === 'admin');
+        document.getElementById('btnClientView').classList.toggle('active', isClient);
+        document.getElementById('btnClientView').classList.toggle('client-active', isClient);
+        document.getElementById('btnDealerView').classList.toggle('active', view === 'dealer');
+        
+        document.body.classList.toggle('client-mode-active', isClient);
+        document.getElementById('mainHeader').classList.toggle('client-mode-active', isClient);
+        document.getElementById('mainNav').classList.toggle('client-mode-active', isClient);
+        
+        document.getElementById('adminViewZone').style.display = (view === 'admin') ? 'block' : 'none';
+        document.getElementById('clientViewZone').style.display = isClient ? 'block' : 'none';
+        document.getElementById('dealerViewZone').style.display = (view === 'dealer') ? 'block' : 'none';
+        calculateERP();
+    }
+
+    function setBeanMode(mode) {
+        currentBeanMode = mode;
+        document.getElementById('modeSingle').classList.toggle('active', mode === 'single');
+        document.getElementById('modeBlend').classList.toggle('active', mode === 'blend');
+        document.getElementById('singleInputGroup').style.display = (mode === 'single') ? 'grid' : 'none';
+        document.getElementById('blendInputGroup').style.display = (mode === 'blend') ? 'block' : 'none';
+        calculateERP();
+    }
+
+    function setBlendInputMode(mode) {
+        blendInputMode = mode;
+        document.getElementById('ratioModePercent').classList.toggle('active', mode === 'percent');
+        document.getElementById('ratioModeGram').classList.toggle('active', mode === 'gram');
+        document.getElementById('ratioColTitle').innerText = mode === 'percent' ? '比例 (%)' : '比例 (g)';
+        calculateERP();
+    }
+
+    function setBulkPackMode(mode) {
+        bulkPackMode = mode;
+        document.getElementById('bulkPackModeHalf').classList.toggle('active', mode === 'half');
+        document.getElementById('bulkPackModeKg').classList.toggle('active', mode === 'kg');
+        
+        const label = document.getElementById('labelBulkCount');
+        if (mode === 'half') {
+            label.innerHTML = '📊 預計訂購的熟豆「半磅總包數」';
+        } else {
+            label.innerHTML = '📊 預計訂購的熟豆「1KG 總袋數 (即為總公斤數)」';
+        }
+        calculateERP();
+    }
+
+    function addBlendItem() {
+        const container = document.getElementById('blendListContainer');
+        const nextIdx = container.children.length;
+        const newItem = document.createElement('div');
+        newItem.className = 'blend-item';
+        
+        const defaultVal = blendInputMode === 'percent' ? '0' : '100';
+        newItem.innerHTML = `
+            <input type="text" value="新配方生豆" class="b-name">
+            <input type="number" value="300" class="b-price" oninput="calculateERP()">
+            <div style="text-align:right;">
+                <input type="number" value="${defaultVal}" class="b-ratio" oninput="calculateERP()">
+                <span class="blend-ratio-badge" id="badge_${nextIdx}">換算: --%</span>
+            </div>
+            <button type="button" class="btn-del" onclick="removeBlendItem(this)">✕</button>
+        `;
+        container.appendChild(newItem);
+        calculateERP();
+    }
+    
+    function removeBlendItem(btn) { 
+        btn.parentElement.remove(); 
+        const badges = document.querySelectorAll('.blend-ratio-badge');
+        badges.forEach((bg, idx) => bg.id = 'badge_' + idx);
+        calculateERP(); 
+    }
+
+    function setCommercialDiscount(tier, discountValue) {
+        document.querySelectorAll('#clientViewZone .tier-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tier' + tier).classList.add('active');
+        document.getElementById('commercialDiscountPercent').value = discountValue;
+        calculateERP();
+    }
+
+    function formatMinutesToHoursAndMins(totalMinutes) {
+        const mins = Math.ceil(totalMinutes);
+        if (mins < 60) return mins + " 分鐘";
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return m === 0 ? h + " 小時" : h + " 小時 " + m + " 分鐘";
+    }
+
+    let globalCalculatedSnapshot = {};
+
+    function calculateERP() {
+        let avgGreenPrice = 0;
+        let blendSnapshotArr = [];
+        let finalPercentMap = []; 
+
+        const names = document.querySelectorAll('.b-name');
+        const prices = document.querySelectorAll('.b-price');
+        const ratios = document.querySelectorAll('.b-ratio');
+        const badges = document.querySelectorAll('.blend-ratio-badge');
+        
+        if (currentBeanMode === 'single') {
+            avgGreenPrice = parseFloat(document.getElementById('greenPrice').value) || 0;
+            document.getElementById('blendTotalWarn').style.display = 'none';
+        } else {
+            let totalRatioInput = 0;
+            for(let i=0; i<ratios.length; i++) {
+                totalRatioInput += parseFloat(ratios[i].value) || 0;
+            }
+
+            let totalCostWeighted = 0;
+            let percentSumCheck = 0;
+
+            for(let i=0; i<prices.length; i++) {
+                let p = parseFloat(prices[i].value) || 0;
+                let rRaw = parseFloat(ratios[i].value) || 0;
+                let n = names[i].value || "未命名";
+                
+                let realPercent = 0;
+                if (blendInputMode === 'gram') {
+                    realPercent = totalRatioInput > 0 ? (rRaw / totalRatioInput) : 0;
+                    if(badges[i]) badges[i].innerText = `佔比: ${(realPercent * 100).toFixed(1)}%`;
+                } else {
+                    realPercent = rRaw / 100;
+                    percentSumCheck += rRaw;
+                    if(badges[i]) badges[i].innerText = `輸入: ${rRaw}%`;
+                }
+
+                totalCostWeighted += (p * realPercent);
+                finalPercentMap.push({ name: n, ratio: realPercent });
+                blendSnapshotArr.push({ name: n, price: p, ratio: (realPercent * 100).toFixed(1), rawRatio: rRaw });
+            }
+
+            avgGreenPrice = totalCostWeighted;
+            document.getElementById('blendAvgGreenPrice').innerText = avgGreenPrice.toFixed(1) + " 元/kg";
+
+            if (blendInputMode === 'percent' && Math.abs(percentSumCheck - 100) > 0.1 && ratios.length > 0) {
+                document.getElementById('blendTotalWarn').style.display = 'block';
+            } else {
+                document.getElementById('blendTotalWarn').style.display = 'none';
+            }
+        }
+
+        const roastLoss = (parseFloat(document.getElementById('roastLoss').value) || 0) / 100;
+        const discardRate = (parseFloat(document.getElementById('discardRate').value) || 0) / 100;
+        const utilityFee = parseFloat(document.getElementById('utilityFee').value) || 0;
+        const myLabor = parseFloat(document.getElementById('myLabor').value) || 0;
+        const dripLossRate = (parseFloat(document.getElementById('dripLossRate').value) || 0) / 100;
+        
+        const overpackGram = parseFloat(document.getElementById('overpackGram').value) || 0;
+        const adminDripGram = parseFloat(document.getElementById('adminDripGram').value) || 10;
+        const dripScaleError = parseFloat(document.getElementById('dripScaleError').value) || 0;
+
+        const pkgHalf = parseFloat(document.getElementById('pkgHalf').value) || 0;
+        const pkgOnePound = parseFloat(document.getElementById('pkgOnePound').value) || 0;
+        const pkgOneKg = parseFloat(document.getElementById('pkgOneKg').value) || 0;
+        const pkgDripSingle = parseFloat(document.getElementById('pkgDripSingle').value) || 0;
+        const pkgDripBox = parseFloat(document.getElementById('pkgDripBox').value) || 0;
+        const pkgDripBoxLarge = parseFloat(document.getElementById('pkgDripBoxLarge').value) || 0; 
+        const pkgShippingCarton = parseFloat(document.getElementById('pkgShippingCarton').value) || 0; 
+
+        const divisorGreenToRoasted = (1 - roastLoss) * (1 - discardRate) * 0.997;
+        const rawGreenCostPerGram = divisorGreenToRoasted > 0 ? (avgGreenPrice / (divisorGreenToRoasted * 1000)) : 0;
+        const operationalCostPerGram = divisorGreenToRoasted > 0 ? ((utilityFee + myLabor) / (divisorGreenToRoasted * 1000)) : 0;
+        const realCostPerGram = rawGreenCostPerGram + operationalCostPerGram;
+        
+        document.getElementById('costPerGram').innerText = realCostPerGram.toFixed(3) + " 元";
+
+        const halfCost = Math.ceil((realCostPerGram * (227 + overpackGram)) + pkgHalf + pkgShippingCarton); 
+        const onePoundCost = Math.ceil((realCostPerGram * (454 + overpackGram)) + pkgOnePound + pkgShippingCarton);
+        
+        const oneKgCost = Math.ceil((realCostPerGram * (1000 + overpackGram)) + pkgOneKg);
+        
+        const dripSingleCost = Math.ceil((realCostPerGram * (adminDripGram + dripScaleError) * (1 + dripLossRate)) + pkgDripSingle); 
+        const dripBoxCost = Math.ceil((dripSingleCost * 10) + pkgDripBox + pkgShippingCarton); 
+        const dripBoxLargeCost = Math.ceil((dripSingleCost * 20) + pkgDripBoxLarge + pkgShippingCarton); 
+
+        document.getElementById('floorHalf').innerText = halfCost;
+        document.getElementById('floorOne').innerText = onePoundCost;
+        document.getElementById('floorKg').innerText = oneKgCost;
+        document.getElementById('floorDripS').innerText = dripSingleCost;
+        document.getElementById('floorDripB').innerText = dripBoxCost;
+        document.getElementById('floorDripBLarge').innerText = dripBoxLargeCost; 
+
+        const coreMarginPercent = parseFloat(document.getElementById('studioCoreMargin').value) || 60;
+        const coreDivisor = (1 - (coreMarginPercent / 100)) <= 0 ? 0.01 : (1 - (coreMarginPercent / 100));
+
+        const b2bMarginPercent = parseFloat(document.getElementById('studioB2BMargin').value) || 40;
+        const b2bDivisor = (1 - (b2bMarginPercent / 100)) <= 0 ? 0.01 : (1 - (b2bMarginPercent / 100));
+
+        const dripMarginPercent = parseFloat(document.getElementById('studioDripMargin').value) || 55;
+        const dripDivisor = (1 - (dripMarginPercent / 100)) <= 0 ? 0.01 : (1 - (dripMarginPercent / 100));
+
+        const stdHalf = Math.ceil(halfCost / coreDivisor);
+        const stdOne = Math.ceil(onePoundCost / coreDivisor);
+        const stdOneKg = Math.ceil(oneKgCost / b2bDivisor); 
+        const stdDripSingle = Math.ceil(dripSingleCost / dripDivisor); 
+        const stdDrip = Math.ceil(dripBoxCost / dripDivisor);
+        const stdDripLarge = Math.ceil(dripBoxLargeCost / dripDivisor); 
+
+        document.getElementById('suggestedRetailHalf').innerText = stdHalf + " 元";
+        document.getElementById('suggestedRetailOnePound').innerText = stdOne + " 元";
+        document.getElementById('suggestedRetailOneKg').innerText = stdOneKg + " 元";
+        document.getElementById('suggestedRetailDripSingle').innerText = stdDripSingle + " 元";
+        document.getElementById('suggestedRetailDripBox').innerText = stdDrip + " 元";
+        document.getElementById('suggestedRetailDripBoxLarge').innerText = stdDripLarge + " 元"; 
+
+        const bulkCount = parseFloat(document.getElementById('bulkHalfOrderCount').value) || 0;
+        let bulkRoastedKg = 0;
+        let b2bUnitCost = 0; 
+        let selectedUnitRetail = 0;
+
+        if (bulkPackMode === 'half') {
+            bulkRoastedKg = (bulkCount * (227 + overpackGram)) / 1000;
+            b2bUnitCost = Math.ceil((realCostPerGram * (227 + overpackGram)) + pkgHalf); 
+            selectedUnitRetail = stdHalf;
+        } else {
+            bulkRoastedKg = (bulkCount * (1000 + overpackGram)) / 1000; 
+            b2bUnitCost = Math.ceil((realCostPerGram * (1000 + overpackGram)) + pkgOneKg); 
+            selectedUnitRetail = stdOneKg;
+        }
+
+        document.getElementById('bulkRequiredRoastedKg').innerText = bulkRoastedKg.toFixed(2) + " 公斤";
+        
+        const bulkGreenKg = divisorGreenToRoasted > 0 ? (bulkRoastedKg / divisorGreenToRoasted) : 0;
+        document.getElementById('bulkRequiredGreenKg').innerText = bulkGreenKg.toFixed(2) + " 公斤";
+
+        const weighContainer = document.getElementById('weighListContainer');
+
+        if (currentBeanMode === 'single') {
+            const bNameInput = escapeHtml(document.getElementById('beanName').value || "單品豆");
+            const prepWeightG = Math.round(bulkGreenKg * 1000);
+            weighContainer.innerHTML = `
+                <div class="weigh-item" style="border-bottom:1px solid #bee3f8;">
+                    <span>🟢 <b>${bNameInput}</b></span>
+                    <span style="text-align:right;">
+                        <strong>應秤備料重: ${prepWeightG.toLocaleString()} g</strong>
+                    </span>
+                </div>`;
+        } else {
+            let listHtml = '';
+            finalPercentMap.forEach(item => {
+                let eachGreenKg = bulkGreenKg * item.ratio;
+                let eachGreenG = Math.round(eachGreenKg * 1000);
+                
+                listHtml += `
+                    <div class="weigh-item" style="border-bottom:1px solid #bee3f8; padding: 6px 0;">
+                        <span>🟢 <b>${escapeHtml(item.name)}</b> (${(item.ratio * 100).toFixed(0)}%)</span>
+                        <span style="text-align:right;">
+                            <strong>應秤備料重: ${eachGreenG.toLocaleString()} g</strong>
+                        </span>
+                    </div>
+                `;
+            });
+            if(finalPercentMap.length === 0) {
+                listHtml = '<div style="color:#999; font-size:0.75rem;">請先在上方建立生豆配比數據。</div>';
+            }
+            weighContainer.innerHTML = listHtml;
+        }
+
+        const customBatchWeightG = parseFloat(document.getElementById('customBatchWeightG').value) || 1000;
+        const customBatchWeightKg = customBatchWeightG / 1000;
+        const customBatchMinutes = parseFloat(document.getElementById('customBatchMinutes').value) || 18;
+
+        const customPots = customBatchWeightKg > 0 ? Math.ceil(bulkGreenKg / customBatchWeightKg) : 0;
+        const totalRoastMinutes = customPots * customBatchMinutes;
+        document.getElementById('bulkCustomPots').innerText = customPots + " 鍋";
+        document.getElementById('bulkCustomHoursStr').innerText = formatMinutesToHoursAndMins(totalRoastMinutes);
+
+        const bulkDripCount = parseFloat(document.getElementById('bulkDripOrderCount').value) || 0;
+        const packSecondsPerBag = parseFloat(document.getElementById('packSecondsPerBag').value) || 45;
+        
+        const totalPackSeconds = bulkDripCount * packSecondsPerBag;
+        const totalPackMinutes = totalPackSeconds / 60;
+        document.getElementById('bulkPackHoursStr').innerText = formatMinutesToHoursAndMins(totalPackMinutes);
+
+        const totalJobMinutes = totalRoastMinutes + totalPackMinutes;
+        document.getElementById('bulkTotalJobTimeStr').innerText = formatMinutesToHoursAndMins(totalJobMinutes);
+
+        const warmUpGasCost = parseFloat(document.getElementById('customWarmUpGasCost').value) || 0;
+        const extraOperationalCost = warmUpGasCost; 
+        const bulkShippingFee = parseFloat(document.getElementById('bulkShippingFee').value) || 0;
+
+        const priceA = selectedUnitRetail;
+        const priceB = Math.max(Math.ceil(selectedUnitRetail * 0.8), b2bUnitCost);
+        const priceC = Math.max(Math.ceil(selectedUnitRetail * 0.6), b2bUnitCost);
+
+        const totalSelectedCost = b2bUnitCost * bulkCount;
+        
+        const profitA = (priceA * bulkCount) - totalSelectedCost - extraOperationalCost - bulkShippingFee;
+        const profitB = (priceB * bulkCount) - totalSelectedCost - extraOperationalCost - bulkShippingFee;
+        const profitC = (priceC * bulkCount) - totalSelectedCost - extraOperationalCost - bulkShippingFee;
+
+        document.getElementById('bulkQuoteA').innerHTML = `單包/袋 $${priceA} <span style="color:#2a9d8f; font-weight:bold;">(淨利 +$${Math.ceil(profitA).toLocaleString()})</span>`;
+        document.getElementById('bulkQuoteB').innerHTML = `單包/袋 $${priceB} <span style="color:#e28743; font-weight:bold;">${priceB === b2bUnitCost ? '(🔒已卡底價) ' : ''}(淨利 +$${Math.ceil(profitB).toLocaleString()})</span>`;
+        document.getElementById('bulkQuoteC').innerHTML = `單包/袋 $${priceC} <span style="color:#2b6cb0; font-weight:bold;">${priceC === b2bUnitCost ? '(🔒已卡底價) ' : ''}(淨利 +$${Math.ceil(profitC).toLocaleString()})</span>`;
+
+        const discountPercent = parseFloat(document.getElementById('commercialDiscountPercent').value) || 20;
+        const discountMultiplier = (100 - discountPercent) / 100;
+        const resellerLocalCost = parseFloat(document.getElementById('resellerLocalCost').value) || 0;
+
+        const b2bSupplyHalf = Math.max(Math.ceil(stdHalf * discountMultiplier) + resellerLocalCost, halfCost);
+        const b2bSupplyOne = Math.max(Math.ceil(stdOne * discountMultiplier) + resellerLocalCost, onePoundCost);
+        const b2bSupplyOneKg = Math.max(Math.ceil(stdOneKg * discountMultiplier) + resellerLocalCost, oneKgCost);
+        const b2bSupplyDripSingle = Math.max(Math.ceil(stdDripSingle * discountMultiplier) + resellerLocalCost, dripSingleCost);
+        const b2bSupplyDrip = Math.max(Math.ceil(stdDrip * discountMultiplier) + resellerLocalCost, dripBoxCost);
+        const b2bSupplyDripLarge = Math.max(Math.ceil(stdDripLarge * discountMultiplier) + resellerLocalCost, dripBoxLargeCost); 
+
+        document.getElementById('tdStdHalf').innerText = stdHalf + " 元";
+        document.getElementById('tdSupplyHalf').innerText = b2bSupplyHalf + " 元" + (b2bSupplyHalf === halfCost ? " (🔒底價)" : "");
+        document.getElementById('tdStdOne').innerText = stdOne + " 元";
+        document.getElementById('tdSupplyOne').innerText = b2bSupplyOne + " 元" + (b2bSupplyOne === onePoundCost ? " (🔒底價)" : "");
+        document.getElementById('tdStdOneKg').innerText = stdOneKg + " 元";
+        document.getElementById('tdSupplyOneKg').innerText = b2bSupplyOneKg + " 元" + (b2bSupplyOneKg === oneKgCost ? " (🔒底價)" : "");
+        document.getElementById('tdStdDripSingle').innerText = stdDripSingle + " 元";
+        document.getElementById('tdSupplyDripSingle').innerText = b2bSupplyDripSingle + " 元" + (b2bSupplyDripSingle === dripSingleCost ? " (🔒底價)" : "");
+        document.getElementById('tdStdDrip').innerText = stdDrip + " 元";
+        document.getElementById('tdSupplyDrip').innerText = b2bSupplyDrip + " 元" + (b2bSupplyDrip === dripBoxCost ? " (🔒底價)" : "");
+        document.getElementById('tdStdDripLarge').innerText = stdDripLarge + " 元"; 
+        document.getElementById('tdSupplyDripLarge').innerText = b2bSupplyDripLarge + " 元" + (b2bSupplyDripLarge === dripBoxLargeCost ? " (🔒底價)" : ""); 
+
+        const dealerInputTotalCost = parseFloat(document.getElementById('dealerInputTotalCost').value) || 0;
+        let dealerTotalWeightG = parseFloat(document.getElementById('dealerTotalWeightG').value) || 1000;
+        if(dealerTotalWeightG <= 0) dealerTotalWeightG = 1000;
+
+        const dealerDripGram = parseFloat(document.getElementById('dealerDripGram').value) || 10;
+        const dealerDripPkg = parseFloat(document.getElementById('dealerDripPkg').value) || 4;
+        const dealerDripLabor = parseFloat(document.getElementById('dealerDripLabor').value) || 4;
+        const dealerDripTargetMargin = parseFloat(document.getElementById('dealerDripTargetMargin').value) || 60;
+
+        const safeDripGram = dealerDripGram <= 0 ? 10 : dealerDripGram;
+        const totalDripBags = Math.floor(dealerTotalWeightG / safeDripGram);
+        const singleDripCost = totalDripBags > 0 ? Math.ceil((dealerInputTotalCost / totalDripBags) + dealerDripPkg + dealerDripLabor) : 0;
+        
+        const dealerDripDivisor = (1 - (dealerDripTargetMargin / 100)) <= 0 ? 0.01 : (1 - (dealerDripTargetMargin / 100));
+        const suggestDripPrice = Math.ceil(singleDripCost / dealerDripDivisor);
+
+        document.getElementById('titlePlanOne').innerText = `📦 出貨方案一：${dealerTotalWeightG}g 熟豆全做成耳掛散賣（即時連動）`;
+        document.getElementById('dripTotalBags').innerText = totalDripBags + " 包";
+        document.getElementById('dripCostPerBag').innerText = singleDripCost + " 元";
+        document.getElementById('dripSuggestPrice').innerText = suggestDripPrice + " 元";
+
+        const plusG = parseFloat(document.getElementById('dealerPlusG').value) || 0;
+        const dealerPkg = parseFloat(document.getElementById('dealerPkgFee').value) || 15;
+        const dealerLabor = parseFloat(document.getElementById('dealerLaborFee').value) || 10;
+        const dealerSellPrice = parseFloat(document.getElementById('dealerSellPrice').value) || 350;
+
+        const singleBagWeight = 227 + plusG;
+        const canPackBags = Math.floor(dealerTotalWeightG / singleBagWeight);
+        const dealerCostPerBag = canPackBags > 0 ? Math.ceil(((dealerInputTotalCost / dealerTotalWeightG) * singleBagWeight) + dealerPkg + dealerLabor) : 0;
+        const dealerProfitPerBag = dealerSellPrice - dealerCostPerBag;
+        const dealerTotalPackProfit = dealerProfitPerBag * canPackBags;
+        
+        const leftoverG = dealerTotalWeightG - (singleBagWeight * canPackBags);
+        const potentialDrips = Math.floor(leftoverG / safeDripGram);
+
+        document.getElementById('dealerCanPackBags').innerText = `穩包出 ${canPackBags} 袋半磅`;
+        document.getElementById('dealerCostPerBag').innerText = dealerCostPerBag + " 元";
+        document.getElementById('dealerProfitPerBag').innerText = dealerProfitPerBag + " 元";
+        document.getElementById('labelTotalPackProfit').innerText = `💵 ${canPackBags}袋半磅全賣光總利潤`;
+        document.getElementById('dealerTotal4Profit').innerText = dealerTotalPackProfit + " 元";
+        document.getElementById('dealerLeftoverG').innerText = leftoverG.toFixed(1) + " g";
+        document.getElementById('dealerLeftoverDrips').innerText = potentialDrips + " 包";
+
+        globalCalculatedSnapshot = {
+            beanName: document.getElementById('beanName').value,
+            mode: currentBeanMode,
+            blendInputMode: blendInputMode, 
+            greenPriceSingle: currentBeanMode === 'single' ? avgGreenPrice : 0,
+            blendBags: blendSnapshotArr,
+            avgGreenPrice: avgGreenPrice.toFixed(1),
+            roastLossPercent: (roastLoss * 100).toFixed(1),
+            costPerGram: realCostPerGram.toFixed(3),
+            fHalfCost: halfCost, sHalfRetail: stdHalf,
+            fOneCost: onePoundCost, sOneRetail: stdOne,
+            fBox20Cost: dripBoxLargeCost, sBox20Retail: stdDripLarge,
+            overpackGram: overpackGram, 
+            adminDripGram: adminDripGram,
+            dripScaleError: dripScaleError,
+            studioDripMargin: dripMarginPercent
+        };
+    }
+
+    function saveCurrentToHistory() {
+        calculateERP();
+        const timestamp = new Date().toLocaleString('zh-TW', { hour12: false });
+        
+        const record = {
+            id: 'erp_' + Date.now(),
+            time: timestamp,
+            snapshot: globalCalculatedSnapshot
+        };
+        
+        erpHistoryData.unshift(record);
+        localStorage.setItem('studio_erp_history_v3', JSON.stringify(erpHistoryData));
+        renderHistoryList();
+        alert(`🎉 儲存成功！已將「${globalCalculatedSnapshot.beanName}」的精算防線存入本地記憶庫。`);
+    }
+
+    function loadHistoryFromStorage() {
+        const localRaw = localStorage.getItem('studio_erp_history_v3');
+        if (localRaw) {
+            try { erpHistoryData = JSON.parse(localRaw); } catch(e) { erpHistoryData = []; }
+        }
+        renderHistoryList();
+    }
+
+    function renderHistoryList() {
+        const container = document.getElementById('historyListContainer');
+        if (erpHistoryData.length === 0) {
+            container.innerHTML = `<p style="color:#999; font-size:0.8rem; text-align:center; padding:15px;">📊 目前暫無歷史備忘紀錄，完成自烘豆精算後即可存檔。</p>`;
+            return;
+        }
+        
+        let html = '';
+        erpHistoryData.forEach((item, index) => {
+            const snap = item.snapshot;
+            
+            let blendDetailStr = "";
+            if(snap.mode === 'blend' && snap.blendBags) {
+                const unit = snap.blendInputMode === 'gram' ? 'g' : '%';
+                blendDetailStr = `<br><small style="color:#718096;">🏷️ 配方組成：` + snap.blendBags.map(b => `${escapeHtml(b.name)}(${b.rawRatio || b.ratio}${unit})`).join(" / ") + `</small>`;
+            }
+
+            const overpackText = snap.overpackGram !== undefined ? ` (半磅溢秤 +${snap.overpackGram}g)` : '';
+
+            html += `
+                <div class="history-item">
+                    <div class="history-item-title">📦 ${escapeHtml(snap.beanName)} (${snap.mode === 'single' ? '單品豆' : '特調配方豆'})${overpackText}</div>
+                    <div class="history-item-meta">
+                        🕒 儲存時間：${item.time}<br>
+                        🌱 生豆均進價：$${snap.avgGreenPrice || "--"}/kg ｜ 熟豆克成本：$${snap.costPerGram}/g ${blendDetailStr}<br>
+                        🔒 半磅底線：$${snap.fHalfCost} (零售定價：$${snap.sHalfRetail})<br>
+                        🔒 20入禮盒底線：$${snap.fBox20Cost} (零售定價：$${snap.sBox20Retail})
+                    </div>
+                    <div class="history-item-actions">
+                        <button class="btn-history-load" onclick="loadRecordBack('${item.id}')">尋回數據 🔄</button>
+                        <button class="btn-history-del" onclick="deleteRecord('${item.id}')">刪除 🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function deleteRecord(id) {
+        if(confirm("確定要刪除這筆歷史決策紀錄嗎？")) {
+            erpHistoryData = erpHistoryData.filter(item => item.id !== id);
+            localStorage.setItem('studio_erp_history_v3', JSON.stringify(erpHistoryData));
+            renderHistoryList();
+        }
+    }
+
+    function loadRecordBack(id) {
+        const target = erpHistoryData.find(item => item.id === id);
+        if(!target) return;
+        
+        const snap = target.snapshot;
+        document.getElementById('beanName').value = snap.beanName;
+        document.getElementById('roastLoss').value = snap.roastLossPercent;
+        
+        document.getElementById('overpackGram').value = snap.overpackGram !== undefined ? snap.overpackGram : 2;
+        document.getElementById('adminDripGram').value = snap.adminDripGram !== undefined ? snap.adminDripGram : 10;
+        document.getElementById('dripScaleError').value = snap.dripScaleError !== undefined ? snap.dripScaleError : 0.5;
+        document.getElementById('studioDripMargin').value = snap.studioDripMargin !== undefined ? snap.studioDripMargin : 55;
+        
+        if (snap.mode === 'single') {
+            setBeanMode('single');
+            document.getElementById('greenPrice').value = snap.greenPriceSingle;
+        } else {
+            setBeanMode('blend');
+            const savedMode = snap.blendInputMode || 'percent'; 
+            setBlendInputMode(savedMode); 
+
+            const container = document.getElementById('blendListContainer');
+            container.innerHTML = ''; 
+            snap.blendBags.forEach((b, idx) => {
+                const newItem = document.createElement('div');
+                newItem.className = 'blend-item';
+                const restoreVal = (savedMode === 'gram' && b.rawRatio !== undefined) ? b.rawRatio : b.ratio;
+                const badgeLabel = savedMode === 'gram' ? '換算: --%' : `輸入: ${restoreVal}%`;
+
+                newItem.innerHTML = `
+                    <input type="text" value="${escapeHtml(b.name)}" class="b-name">
+                    <input type="number" value="${b.price}" class="b-price" oninput="calculateERP()">
+                    <div style="text-align:right;">
+                        <input type="number" value="${restoreVal}" class="b-ratio" oninput="calculateERP()">
+                        <span class="blend-ratio-badge" id="badge_${idx}">${badgeLabel}</span>
+                    </div>
+                    <button type="button" class="btn-del" onclick="removeBlendItem(this)">✕</button>
+                `;
+                container.appendChild(newItem);
+            });
+        }
+        
+        calculateERP();
+        switchMainView('admin');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        alert(`🔄 已成功將歷史批次「${snap.beanName}」的歷史配方與成本結構完整回填！`);
+    }
+
+    function exportHistoryToCSV() {
+        if(erpHistoryData.length === 0) {
+            alert("目前沒有紀錄可以匯出喔！");
+            return;
+        }
+        let csvContent = "\uFEFF";
+        csvContent += "存檔時間,豆款名稱,模式,半磅溢秤設定(g),生豆平均進價(元/kg),詳細配方比例明細,熟豆每克淨硬成本,綜合失重率,半磅硬成本底線,半磅建議零售價,20入禮盒硬成本底線,20入禮盒建議零售價\n";
+        
+        erpHistoryData.forEach(item => {
+            const snap = item.snapshot;
+            const mLabel = snap.mode === 'single' ? "單品豆" : "配方豆";
+            const overValue = snap.overpackGram !== undefined ? snap.overpackGram : 2;
+            
+            let formulaDetail = "";
+            if (snap.mode === 'blend' && snap.blendBags) {
+                const unit = snap.blendInputMode === 'gram' ? 'g' : '%';
+                formulaDetail = snap.blendBags.map(b => `${b.name.replace(/"/g, '""')}(${b.rawRatio || b.ratio}${unit})`).join(" / ");
+            } else {
+                formulaDetail = "無(單品)";
+            }
+
+            const safeBeanName = snap.beanName ? snap.beanName.replace(/"/g, '""') : '';
+            csvContent += `"${item.time}","${safeBeanName}","${mLabel}",${overValue},${snap.avgGreenPrice || snap.greenPriceSingle},"${formulaDetail}",${snap.costPerGram},${snap.roastLossPercent},${snap.fHalfCost},${snap.sHalfRetail},${snap.fBox20Cost},${snap.sBox20Retail}\n`;
+        });
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `工作室咖啡利潤精算決策報表_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+</body>
+</html>
